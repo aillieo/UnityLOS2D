@@ -1,0 +1,11 @@
+{
+    "name": "com.aillieo.los-2d",
+    "displayName": "AillieoUtils Line of Sight 2D",
+    "description": "AillieoUtils Line of Sight 2D",
+    "version": "1.0.0",
+    "unity": "2019.4",
+    "license": "MIT",
+    "dependencies": {
+
+    }
+}
