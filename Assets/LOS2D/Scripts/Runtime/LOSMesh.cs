@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,11 +7,7 @@ namespace AillieoUtils.LOS2D
     // [RequireComponent(typeof(MeshFilter))]
     public class LOSMesh : MonoBehaviour
     {
-        [Range(0, 180)]
-        public float fov = 60f;
-
-        [Range(0, 1000)]
-        public float maxDis = 10f;
+        public LOSSource associatedLOSSource;
 
         [Range(1, 1024)]
         public int resolution = 40;
@@ -20,7 +16,6 @@ namespace AillieoUtils.LOS2D
         private MeshFilter meshComp;
 
         public bool autoRegenerateMesh = true;
-
 
         private List<Vector3> vertices = new List<Vector3>();
         private List<int> triangles = new List<int>();
@@ -34,6 +29,11 @@ namespace AillieoUtils.LOS2D
                 {
                     meshComp = gameObject.AddComponent<MeshFilter>();
                 }
+            }
+
+            if (associatedLOSSource == null)
+            {
+                associatedLOSSource = gameObject.GetComponentInParent<LOSSource>();
             }
         }
 
@@ -62,6 +62,19 @@ namespace AillieoUtils.LOS2D
 
         private void GenVerts(List<Vector3> verts)
         {
+            float fov;
+            float maxDist;
+            if (associatedLOSSource != null)
+            {
+                fov = associatedLOSSource.fov;
+                maxDist = associatedLOSSource.maxDist;
+            }
+            else
+            {
+                fov = LOSManager.defaultFOV;
+                maxDist = LOSManager.defaultMaxDist;
+            }
+
             float halfFov = fov * 0.5f;
             float rotY = transform.eulerAngles.y;
             float angleStart = (rotY - halfFov) * Mathf.Deg2Rad;
@@ -75,7 +88,7 @@ namespace AillieoUtils.LOS2D
             float angle = angleStart;
             for (int i = 0; i <= resolution; ++i)
             {
-                var res = Cast(angle);
+                var res = Cast(angle, maxDist);
 
                 Vector3 hitPoint = res.point;
                 hitPoint = transform.InverseTransformPoint(hitPoint);
@@ -114,15 +127,15 @@ namespace AillieoUtils.LOS2D
             losMesh.SetTriangles(triangles, 0);
         }
 
-        private RaycastHit Cast(float angle)
+        private RaycastHit Cast(float angle, float maxDist)
         {
             float x = Mathf.Sin(angle);
             float y = Mathf.Cos(angle);
             Ray ray = new Ray(transform.position, new Vector3(x, 0, y));
-            if (!Physics.Raycast(ray, out RaycastHit hit, maxDis, 1 << LayerMask.NameToLayer("Default")))
+            if (!Physics.Raycast(ray, out RaycastHit hit, maxDist, 1 << LayerMask.NameToLayer("Default")))
             {
-                hit.distance = maxDis;
-                hit.point = ray.GetPoint(maxDis);
+                hit.distance = maxDist;
+                hit.point = ray.GetPoint(maxDist);
             }
 
             return hit;

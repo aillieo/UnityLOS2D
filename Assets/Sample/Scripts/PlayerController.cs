@@ -1,15 +1,20 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Sample
 {
     public class PlayerController : MonoBehaviour
     {
-        public float speed = 1f;
-        private Vector3 targetPosition;
+        private NavMeshAgent nmAgent;
 
-        void Update()
+        private void OnEnable()
+        {
+            nmAgent = GetComponent<NavMeshAgent>();
+        }
+
+        private void Update()
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -17,13 +22,10 @@ namespace Sample
                 Plane plane = new Plane(Vector3.up, Vector3.zero);
                 if (plane.Raycast(r, out float enter))
                 {
-                    targetPosition = r.GetPoint(enter);
-                    this.transform.LookAt(targetPosition);
+                    Vector3 targetPosition = r.GetPoint(enter);
+                    nmAgent.SetDestination(targetPosition);
                 }
             }
-
-            this.transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
         }
     }
-
 }
