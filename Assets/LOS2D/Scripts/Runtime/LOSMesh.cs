@@ -16,9 +16,12 @@ namespace AillieoUtils.LOS2D
         private MeshFilter meshComp;
 
         public bool autoRegenerateMesh = true;
+        public bool drawHidden = true;
+        public bool drawSight = true;
 
         private List<Vector3> vertices = new List<Vector3>();
-        private List<int> triangles = new List<int>();
+        private List<int> triangles1 = new List<int>();
+        private List<int> triangles2 = new List<int>();
 
         private void Start()
         {
@@ -62,17 +65,25 @@ namespace AillieoUtils.LOS2D
 
         private void GenVerts(List<Vector3> verts)
         {
+            if (!drawSight && !drawHidden)
+            {
+                return;
+            }
+
             float fov;
             float maxDist;
+            LayerMask mask;
             if (associatedLOSSource != null)
             {
                 fov = associatedLOSSource.fov;
                 maxDist = associatedLOSSource.maxDist;
+                mask = associatedLOSSource.maskForRender;
             }
             else
             {
                 fov = LOSManager.defaultFOV;
                 maxDist = LOSManager.defaultMaxDist;
+                mask = LOSManager.defaultMaskForRender;
             }
 
             float halfFov = fov * 0.5f;
@@ -88,11 +99,19 @@ namespace AillieoUtils.LOS2D
             float angle = angleStart;
             for (int i = 0; i <= resolution; ++i)
             {
-                var res = Cast(angle, maxDist);
+                bool hit = Cast(angle, maxDist, mask, out Vector3 point1, out Vector3 point2);
+                point1 = transform.InverseTransformPoint(point1);
+                if (hit)
+                {
+                    point2 = transform.InverseTransformPoint(point2);
+                }
+                else
+                {
+                    point2 = point1;
+                }
 
-                Vector3 hitPoint = res.point;
-                hitPoint = transform.InverseTransformPoint(hitPoint);
-                verts.Add(hitPoint);
+                verts.Add(point1);
+                verts.Add(point2);
 
                 angle += step;
             }
@@ -100,12 +119,31 @@ namespace AillieoUtils.LOS2D
 
         private void GenMesh(List<Vector3> verts)
         {
-            triangles.Clear();
-            for (int i = 1; i + 1 < verts.Count; i ++)
+            // 内侧mesh
+            triangles1.Clear();
+            if (drawSight)
             {
-                triangles.Add(0);
-                triangles.Add(i);
-                triangles.Add(i + 1);
+                for (int i = 1; i + 2 < verts.Count; i += 2)
+                {
+                    triangles1.Add(0);
+                    triangles1.Add(i);
+                    triangles1.Add(i + 2);
+                }
+            }
+
+            triangles2.Clear();
+            if (drawHidden)
+            {
+                for (int i = 1; i + 2 < verts.Count; i += 2)
+                {
+                    triangles2.Add(i);
+                    triangles2.Add(i + 1);
+                    triangles2.Add(i + 2);
+
+                    triangles2.Add(i + 1);
+                    triangles2.Add(i + 3);
+                    triangles2.Add(i + 2);
+                }
             }
 
             Mesh losMesh;
@@ -116,29 +154,37 @@ namespace AillieoUtils.LOS2D
                 {
                     losMesh = new Mesh();
                     meshComp.sharedMesh = losMesh;
+                    losMesh.subMeshCount = 2;
                 }
             }
             else
             {
                 losMesh = meshComp.mesh;
+                losMesh.subMeshCount = 2;
             }
 
             losMesh.SetVertices(verts);
-            losMesh.SetTriangles(triangles, 0);
+            losMesh.SetTriangles(triangles1, 0);
+            losMesh.SetTriangles(triangles2, 1);
         }
 
-        private RaycastHit Cast(float angle, float maxDist)
+        private bool Cast(float angle, float maxDist, LayerMask mask, out Vector3 point1, out Vector3 point2)
         {
             float x = Mathf.Sin(angle);
             float y = Mathf.Cos(angle);
             Ray ray = new Ray(transform.position, new Vector3(x, 0, y));
-            if (!Physics.Raycast(ray, out RaycastHit hit, maxDist, 1 << LayerMask.NameToLayer("Default")))
+            if (Physics.Raycast(ray, out RaycastHit hit, maxDist, mask))
             {
-                hit.distance = maxDist;
-                hit.point = ray.GetPoint(maxDist);
+                point1 = hit.point;
+                point2 = ray.GetPoint(maxDist);
+                return true;
             }
-
-            return hit;
+            else
+            {
+                point1 = ray.GetPoint(maxDist);
+                point2 = point1;
+                return false;
+            }
         }
 
         private void OnDrawGizmos()

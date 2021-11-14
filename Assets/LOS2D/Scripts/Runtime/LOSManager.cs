@@ -19,26 +19,17 @@ namespace AillieoUtils.LOS2D
                 this.t = t;
             }
 
-            public override bool Equals(object obj)
+            public class EqualityComparer : IEqualityComparer<Pair>
             {
-                if (obj is Pair pair)
+                public bool Equals(Pair x, Pair y)
                 {
-                    return s == pair.s && t == pair.t;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            public override int GetHashCode()
-            {
-                if (s == null || t == null)
-                {
-                    return 0;
+                    return x.s == y.s && x.t == y.t;
                 }
 
-                return this.s.GetHashCode() ^ this.t.GetHashCode() << 2;
+                public int GetHashCode(Pair obj)
+                {
+                    return obj.s.GetHashCode() ^ obj.t.GetHashCode() << 2;
+                }
             }
         }
 
@@ -79,8 +70,9 @@ namespace AillieoUtils.LOS2D
         public static float defaultFOV = 90f;
         //[Range(0, 1000)]
         public static float defaultMaxDist = 10f;
+        public static LayerMask defaultMaskForRender = 1;
 
-        private static readonly HashSet<Pair> pairsInSight = new HashSet<Pair>();
+        private static readonly HashSet<Pair> pairsInSight = new HashSet<Pair>(new Pair.EqualityComparer());
         private static readonly HashSet<LOSSource> sources = new HashSet<LOSSource>();
         private static readonly HashSet<LOSTarget> targets = new HashSet<LOSTarget>();
         private List<LOSSource> sourceBuffer = new List<LOSSource>();
@@ -89,6 +81,16 @@ namespace AillieoUtils.LOS2D
         public static event Action<LOSSource, LOSTarget> OnEnter;
 
         public static event Action<LOSSource, LOSTarget> OnExit;
+
+        public static bool IsInSight(LOSSource source, LOSTarget target)
+        {
+            if (source == null || target == null)
+            {
+                return false;
+            }
+            EnsureInstance();
+            return pairsInSight.Contains(new Pair(source, target));
+        }
 
         internal static bool Register(LOSSource source)
         {
@@ -135,12 +137,12 @@ namespace AillieoUtils.LOS2D
             if (inSight)
             {
                 pairsInSight.Add(pair);
-                OnEnter(s, t);
+                OnEnter?.Invoke(s, t);
             }
             else
             {
                 pairsInSight.Remove(pair);
-                OnExit(s, t);
+                OnExit?.Invoke(s, t);
             }
         }
 
@@ -158,7 +160,7 @@ namespace AillieoUtils.LOS2D
                         Vector3 sPos = s.transform.position;
                         Vector3 tPos = t.transform.position;
                         Ray ray = new Ray(sPos, tPos - sPos);
-                        if (Physics.Raycast(ray, out RaycastHit hit, s.maxDist))
+                        if (Physics.Raycast(ray, out RaycastHit hit, s.maxDist, s.maskForEvent))
                         {
                             if (hit.transform.IsChildOf(t.transform))
                             {

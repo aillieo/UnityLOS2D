@@ -10,6 +10,9 @@ namespace AillieoUtils.LOS2D
         [Range(0, 1000)]
         public float maxDist = 10f;
 
+        public LayerMask maskForEvent = 1;
+        public LayerMask maskForRender = 1;
+
         private void OnEnable()
         {
             LOSManager.Register(this);

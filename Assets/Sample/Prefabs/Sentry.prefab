@@ -16,7 +16,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2461665727224522096
 Transform:
   m_ObjectHideFlags: 0
@@ -140,7 +140,8 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 6bb32c9997e031642aebda8405655aee, type: 2}
+  - {fileID: 2100000, guid: 70609b6ef5ac43f4db238f7e2d0dd56a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -177,6 +178,8 @@ MonoBehaviour:
   resolution: 100
   meshComp: {fileID: 7812131497681025557}
   autoRegenerateMesh: 1
+  drawHidden: 1
+  drawSight: 1
 --- !u!1 &7730849558256348099
 GameObject:
   m_ObjectHideFlags: 0
@@ -289,6 +292,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1fed95fdb905f1409117c1af3dabbb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  target: {fileID: 0}
 --- !u!114 &5401159855835268453
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -301,8 +305,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2caf1d20a8914184a8973ddca72dbcd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fov: 90
-  maxDist: 6
+  fov: 60
+  maxDist: 10
+  mask:
+    serializedVersion: 2
+    m_Bits: 1
 --- !u!195 &6844881915242927229
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -313,7 +320,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 1
+  m_Speed: 0.5
   m_Acceleration: 2
   avoidancePriority: 50
   m_AngularSpeed: 45

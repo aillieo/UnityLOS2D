@@ -2,19 +2,24 @@ using System.Collections;
 using System.Collections.Generic;
 using AillieoUtils.LOS2D;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Sample
 {
     public class SentryController : MonoBehaviour
     {
-        public GameObject alertObj;
+        [SerializeField]
+        private GameObject alertObj;
         private LOSSource losSource;
         private AIPatrol patrol;
+        private NavMeshAgent nmAgent;
 
         private void OnEnable()
         {
             losSource = GetComponent<LOSSource>();
             patrol = GetComponent<AIPatrol>();
+            nmAgent = GetComponent<NavMeshAgent>();
+            alertObj.SetActive(false);
 
             LOSManager.OnEnter += OnDetect;
             LOSManager.OnExit += OnLose;
@@ -41,6 +46,7 @@ namespace Sample
             {
                 this.alertObj.SetActive(true);
                 this.patrol.target = target.gameObject;
+                this.nmAgent.speed = 1;
             }
         }
 
@@ -50,6 +56,7 @@ namespace Sample
             {
                 this.patrol.target = null;
                 this.alertObj.SetActive(false);
+                this.nmAgent.speed = 0.5f;
             }
         }
     }
