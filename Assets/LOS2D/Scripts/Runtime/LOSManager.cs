@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -63,13 +64,10 @@ namespace AillieoUtils.LOS2D
             else
             {
                 instance = this;
+                GameObject.DontDestroyOnLoad(gameObject);
             }
         }
 
-        //[Range(0, 180)]
-        public static float defaultFOV = 90f;
-        //[Range(0, 1000)]
-        public static float defaultMaxDist = 10f;
         public static LayerMask defaultMaskForRender = 1;
 
         private static readonly HashSet<Pair> pairsInSight = new HashSet<Pair>(new Pair.EqualityComparer());
@@ -90,6 +88,26 @@ namespace AillieoUtils.LOS2D
             }
             EnsureInstance();
             return pairsInSight.Contains(new Pair(source, target));
+        }
+
+        public static LOSTarget[] GetTargetsInSight(LOSSource source)
+        {
+            if (source == null)
+            {
+                return Array.Empty<LOSTarget>();
+            }
+            EnsureInstance();
+            return pairsInSight.Where(pair => pair.s == source).Select(p => p.t).ToArray();
+        }
+
+        public static LOSSource[] GetSourcesHaveSightOf(LOSTarget target)
+        {
+            if (target == null)
+            {
+                return Array.Empty<LOSSource>();
+            }
+            EnsureInstance();
+            return pairsInSight.Where(pair => pair.t == target).Select(p => p.s).ToArray();
         }
 
         internal static bool Register(LOSSource source)
@@ -159,7 +177,9 @@ namespace AillieoUtils.LOS2D
                     {
                         Vector3 sPos = s.transform.position;
                         Vector3 tPos = t.transform.position;
-                        Ray ray = new Ray(sPos, tPos - sPos);
+                        Vector3 dir = tPos - sPos;
+                        sPos.y += s.eyeHeight;
+                        Ray ray = new Ray(sPos, dir);
                         if (Physics.Raycast(ray, out RaycastHit hit, s.maxDist, s.maskForEvent))
                         {
                             if (hit.transform.IsChildOf(t.transform))

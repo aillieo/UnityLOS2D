@@ -11,6 +11,10 @@ namespace AillieoUtils.LOS2D
 
         [Range(1, 1024)]
         public int resolution = 40;
+        [Range(0, 180)]
+        public float defaultFOV = 90f;
+        [Range(0, 1000)]
+        public float defaultMaxDist = 10f;
 
         [SerializeField]
         private MeshFilter meshComp;
@@ -18,6 +22,7 @@ namespace AillieoUtils.LOS2D
         public bool autoRegenerateMesh = true;
         public bool drawHidden = true;
         public bool drawSight = true;
+        public bool drawSimpleSector = false;
 
         private List<Vector3> vertices = new List<Vector3>();
         private List<int> triangles1 = new List<int>();
@@ -65,7 +70,7 @@ namespace AillieoUtils.LOS2D
 
         private void GenVerts(List<Vector3> verts)
         {
-            if (!drawSight && !drawHidden)
+            if (!drawSimpleSector && !drawSight && !drawHidden)
             {
                 return;
             }
@@ -81,8 +86,8 @@ namespace AillieoUtils.LOS2D
             }
             else
             {
-                fov = LOSManager.defaultFOV;
-                maxDist = LOSManager.defaultMaxDist;
+                fov = defaultFOV;
+                maxDist = defaultMaxDist;
                 mask = LOSManager.defaultMaskForRender;
             }
 
@@ -99,19 +104,32 @@ namespace AillieoUtils.LOS2D
             float angle = angleStart;
             for (int i = 0; i <= resolution; ++i)
             {
-                bool hit = Cast(angle, maxDist, mask, out Vector3 point1, out Vector3 point2);
-                point1 = transform.InverseTransformPoint(point1);
-                if (hit)
+                float x = Mathf.Sin(angle);
+                float y = Mathf.Cos(angle);
+                Vector3 dir = new Vector3(x, 0, y);
+
+                if (drawSimpleSector)
                 {
-                    point2 = transform.InverseTransformPoint(point2);
+                    Vector3 endPoint = transform.position + dir * maxDist;
+                    Vector3 endPointLocal = transform.InverseTransformPoint(endPoint);
+                    verts.Add(endPointLocal);
                 }
                 else
                 {
-                    point2 = point1;
-                }
+                    bool hit = Cast(dir, maxDist, mask, out Vector3 point1, out Vector3 point2);
+                    point1 = transform.InverseTransformPoint(point1);
+                    if (hit)
+                    {
+                        point2 = transform.InverseTransformPoint(point2);
+                    }
+                    else
+                    {
+                        point2 = point1;
+                    }
 
-                verts.Add(point1);
-                verts.Add(point2);
+                    verts.Add(point1);
+                    verts.Add(point2);
+                }
 
                 angle += step;
             }
@@ -121,28 +139,41 @@ namespace AillieoUtils.LOS2D
         {
             // 内侧mesh
             triangles1.Clear();
-            if (drawSight)
+            triangles2.Clear();
+
+            if (drawSimpleSector)
             {
-                for (int i = 1; i + 2 < verts.Count; i += 2)
+                for (int i = 1; i + 1 < verts.Count; i ++)
                 {
                     triangles1.Add(0);
                     triangles1.Add(i);
-                    triangles1.Add(i + 2);
+                    triangles1.Add(i + 1);
                 }
             }
-
-            triangles2.Clear();
-            if (drawHidden)
+            else
             {
-                for (int i = 1; i + 2 < verts.Count; i += 2)
+                if (drawSight)
                 {
-                    triangles2.Add(i);
-                    triangles2.Add(i + 1);
-                    triangles2.Add(i + 2);
+                    for (int i = 1; i + 2 < verts.Count; i += 2)
+                    {
+                        triangles1.Add(0);
+                        triangles1.Add(i);
+                        triangles1.Add(i + 2);
+                    }
+                }
 
-                    triangles2.Add(i + 1);
-                    triangles2.Add(i + 3);
-                    triangles2.Add(i + 2);
+                if (drawHidden)
+                {
+                    for (int i = 1; i + 2 < verts.Count; i += 2)
+                    {
+                        triangles2.Add(i);
+                        triangles2.Add(i + 1);
+                        triangles2.Add(i + 2);
+
+                        triangles2.Add(i + 1);
+                        triangles2.Add(i + 3);
+                        triangles2.Add(i + 2);
+                    }
                 }
             }
 
@@ -154,25 +185,32 @@ namespace AillieoUtils.LOS2D
                 {
                     losMesh = new Mesh();
                     meshComp.sharedMesh = losMesh;
-                    losMesh.subMeshCount = 2;
                 }
             }
             else
             {
                 losMesh = meshComp.mesh;
-                losMesh.subMeshCount = 2;
             }
 
-            losMesh.SetVertices(verts);
-            losMesh.SetTriangles(triangles1, 0);
-            losMesh.SetTriangles(triangles2, 1);
+            losMesh.Clear();
+            if (drawSimpleSector || !drawHidden)
+            {
+                losMesh.subMeshCount = 1;
+                losMesh.SetVertices(verts);
+                losMesh.SetTriangles(triangles1, 0);
+            }
+            else
+            {
+                losMesh.subMeshCount = 2;
+                losMesh.SetVertices(verts);
+                losMesh.SetTriangles(triangles1, 0);
+                losMesh.SetTriangles(triangles2, 1);
+            }
         }
 
-        private bool Cast(float angle, float maxDist, LayerMask mask, out Vector3 point1, out Vector3 point2)
+        private bool Cast(Vector3 direction, float maxDist, LayerMask mask, out Vector3 point1, out Vector3 point2)
         {
-            float x = Mathf.Sin(angle);
-            float y = Mathf.Cos(angle);
-            Ray ray = new Ray(transform.position, new Vector3(x, 0, y));
+            Ray ray = new Ray(transform.position, direction);
             if (Physics.Raycast(ray, out RaycastHit hit, maxDist, mask))
             {
                 point1 = hit.point;

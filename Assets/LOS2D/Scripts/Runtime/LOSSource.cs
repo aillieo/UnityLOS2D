@@ -13,6 +13,8 @@ namespace AillieoUtils.LOS2D
         public LayerMask maskForEvent = 1;
         public LayerMask maskForRender = 1;
 
+        public float eyeHeight = 0.5f;
+
         private void OnEnable()
         {
             LOSManager.Register(this);
