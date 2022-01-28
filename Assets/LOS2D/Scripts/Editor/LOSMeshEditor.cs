@@ -51,6 +51,8 @@ namespace AillieoUtils.LOS2D
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(m.drawSight)));
             }
 
+            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(m.fillUV)));
+
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(m.autoRegenerateMesh)));
 
             serializedObject.ApplyModifiedProperties();

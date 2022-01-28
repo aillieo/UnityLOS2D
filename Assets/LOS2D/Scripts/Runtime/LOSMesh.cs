@@ -23,10 +23,12 @@ namespace AillieoUtils.LOS2D
         public bool drawHidden = true;
         public bool drawSight = true;
         public bool drawSimpleSector = false;
+        public bool fillUV = false;
 
         private List<Vector3> vertices = new List<Vector3>();
         private List<int> triangles1 = new List<int>();
         private List<int> triangles2 = new List<int>();
+        private List<Vector2> uvs = new List<Vector2>();
 
         private void Start()
         {
@@ -63,12 +65,12 @@ namespace AillieoUtils.LOS2D
                 return;
             }
 
-            GenVerts(vertices);
+            GenVerts();
 
-            GenMesh(vertices);
+            GenMesh();
         }
 
-        private void GenVerts(List<Vector3> verts)
+        private void GenVerts()
         {
             if (!drawSimpleSector && !drawSight && !drawHidden)
             {
@@ -98,8 +100,16 @@ namespace AillieoUtils.LOS2D
 
             float step = (angleEnd - angleStart) / resolution;
 
-            verts.Clear();
-            verts.Add(new Vector3(0, 0, 0));
+            vertices.Clear();
+
+            if (fillUV)
+            {
+                uvs.Clear();
+            }
+            else
+            {
+                vertices.Add(new Vector3(0, 0, 0));
+            }
 
             float angle = angleStart;
             for (int i = 0; i <= resolution; ++i)
@@ -112,11 +122,23 @@ namespace AillieoUtils.LOS2D
                 {
                     Vector3 endPoint = transform.position + dir * maxDist;
                     Vector3 endPointLocal = transform.InverseTransformPoint(endPoint);
-                    verts.Add(endPointLocal);
+                    if (fillUV)
+                    {
+                        vertices.Add(new Vector3(0, 0, 0));
+                    }
+
+                    vertices.Add(endPointLocal);
+
+                    if (fillUV)
+                    {
+                        float theta = (float)i / resolution;
+                        uvs.Add(new Vector2(0, theta));
+                        uvs.Add(new Vector2(1, theta));
+                    }
                 }
                 else
                 {
-                    bool hit = Cast(dir, maxDist, mask, out Vector3 point1, out Vector3 point2);
+                    bool hit = Cast(dir, maxDist, mask, out Vector3 point1, out Vector3 point2, out float dist);
                     point1 = transform.InverseTransformPoint(point1);
                     if (hit)
                     {
@@ -127,15 +149,28 @@ namespace AillieoUtils.LOS2D
                         point2 = point1;
                     }
 
-                    verts.Add(point1);
-                    verts.Add(point2);
+                    if (fillUV)
+                    {
+                        vertices.Add(new Vector3(0, 0, 0));
+                    }
+
+                    vertices.Add(point1);
+                    vertices.Add(point2);
+
+                    if (fillUV)
+                    {
+                        float theta = (float)i / resolution;
+                        uvs.Add(new Vector2(0, theta));
+                        uvs.Add(new Vector2(dist / maxDist, theta));
+                        uvs.Add(new Vector2(1, theta));
+                    }
                 }
 
                 angle += step;
             }
         }
 
-        private void GenMesh(List<Vector3> verts)
+        private void GenMesh()
         {
             // 内侧mesh
             triangles1.Clear();
@@ -143,36 +178,76 @@ namespace AillieoUtils.LOS2D
 
             if (drawSimpleSector)
             {
-                for (int i = 1; i + 1 < verts.Count; i ++)
+                if (fillUV)
                 {
-                    triangles1.Add(0);
-                    triangles1.Add(i);
-                    triangles1.Add(i + 1);
+                    for (int i = 0; i + 3 < vertices.Count; i += 2)
+                    {
+                        triangles1.Add(i);
+                        triangles1.Add(i + 1);
+                        triangles1.Add(i + 3);
+                    }
+                }
+                else
+                {
+                    for (int i = 1; i + 1 < vertices.Count; i++)
+                    {
+                        triangles1.Add(0);
+                        triangles1.Add(i);
+                        triangles1.Add(i + 1);
+                    }
                 }
             }
             else
             {
                 if (drawSight)
                 {
-                    for (int i = 1; i + 2 < verts.Count; i += 2)
+                    if (fillUV)
                     {
-                        triangles1.Add(0);
-                        triangles1.Add(i);
-                        triangles1.Add(i + 2);
+                        for (int i = 0; i + 4 < vertices.Count; i += 3)
+                        {
+                            triangles1.Add(i);
+                            triangles1.Add(i + 1);
+                            triangles1.Add(i + 4);
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 1; i + 2 < vertices.Count; i += 2)
+                        {
+                            triangles1.Add(0);
+                            triangles1.Add(i);
+                            triangles1.Add(i + 2);
+                        }
                     }
                 }
 
                 if (drawHidden)
                 {
-                    for (int i = 1; i + 2 < verts.Count; i += 2)
+                    if (fillUV)
                     {
-                        triangles2.Add(i);
-                        triangles2.Add(i + 1);
-                        triangles2.Add(i + 2);
+                        for (int i = 0; i + 3 < vertices.Count; i += 3)
+                        {
+                            triangles2.Add(i + 1);
+                            triangles2.Add(i + 2);
+                            triangles2.Add(i + 4);
 
-                        triangles2.Add(i + 1);
-                        triangles2.Add(i + 3);
-                        triangles2.Add(i + 2);
+                            triangles2.Add(i + 2);
+                            triangles2.Add(i + 5);
+                            triangles2.Add(i + 4);
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 1; i + 2 < vertices.Count; i += 2)
+                        {
+                            triangles2.Add(i);
+                            triangles2.Add(i + 1);
+                            triangles2.Add(i + 2);
+
+                            triangles2.Add(i + 1);
+                            triangles2.Add(i + 3);
+                            triangles2.Add(i + 2);
+                        }
                     }
                 }
             }
@@ -196,31 +271,41 @@ namespace AillieoUtils.LOS2D
             if (drawSimpleSector || !drawHidden)
             {
                 losMesh.subMeshCount = 1;
-                losMesh.SetVertices(verts);
+                losMesh.SetVertices(vertices);
                 losMesh.SetTriangles(triangles1, 0);
+                if (fillUV)
+                {
+                    losMesh.SetUVs(0, uvs);
+                }
             }
             else
             {
                 losMesh.subMeshCount = 2;
-                losMesh.SetVertices(verts);
+                losMesh.SetVertices(vertices);
                 losMesh.SetTriangles(triangles1, 0);
                 losMesh.SetTriangles(triangles2, 1);
+                if (fillUV)
+                {
+                    losMesh.SetUVs(0, uvs);
+                }
             }
         }
 
-        private bool Cast(Vector3 direction, float maxDist, LayerMask mask, out Vector3 point1, out Vector3 point2)
+        private bool Cast(Vector3 direction, float maxDist, LayerMask mask, out Vector3 point1, out Vector3 point2, out float dist)
         {
             Ray ray = new Ray(transform.position, direction);
             if (Physics.Raycast(ray, out RaycastHit hit, maxDist, mask))
             {
                 point1 = hit.point;
                 point2 = ray.GetPoint(maxDist);
+                dist = hit.distance;
                 return true;
             }
             else
             {
                 point1 = ray.GetPoint(maxDist);
                 point2 = point1;
+                dist = maxDist;
                 return false;
             }
         }
