@@ -33,11 +33,14 @@ namespace Sample
 
         private void LateUpdate()
         {
-            Quaternion lookAt = Quaternion.LookRotation(Camera.main.transform.position);
-            Vector3 eulerAngles = lookAt.eulerAngles;
-            eulerAngles.x = 0;
-            eulerAngles.z = 0;
-            alertObj.transform.eulerAngles = eulerAngles;
+            if (alertObj.activeSelf)
+            {
+                Quaternion lookAt = Quaternion.LookRotation(Camera.main.transform.position);
+                Vector3 eulerAngles = lookAt.eulerAngles;
+                eulerAngles.x = 0;
+                eulerAngles.z = 0;
+                alertObj.transform.eulerAngles = eulerAngles;
+            }
         }
 
         private void OnDetect(LOSSource source, LOSTarget target)

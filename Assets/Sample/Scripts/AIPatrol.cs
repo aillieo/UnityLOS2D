@@ -7,6 +7,8 @@ namespace Sample
 {
     public class AIPatrol : MonoBehaviour
     {
+        [SerializeField]
+        private float range = 8f;
         private NavMeshAgent nmAgent;
         private Vector3 lastDest;
         public GameObject target;
@@ -25,12 +27,12 @@ namespace Sample
                 nmAgent.SetDestination(lastDest);
             }
 
-            if (Vector3.SqrMagnitude(transform.position - lastDest) < 1)
+            if (nmAgent.remainingDistance < 1)
             {
                 Vector3 random = new Vector3(
-                    Random.Range(-10, 10),
+                    Random.Range(-range, range),
                     lastDest.y,
-                    Random.Range(-10, 10));
+                    Random.Range(-range, range));
 
                 lastDest = random;
                 nmAgent.SetDestination(lastDest);
