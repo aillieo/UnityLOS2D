@@ -20,13 +20,21 @@ LOSManager.OnEnter += (source, target) =>
 ![image](./ScreenShots/pic_00.png)
 
 'Associated LOSSource' : read angle and radius parameters from the given `LOSSource`
-`Resolution` : the resolution for the sector
+
+'Resolution' : the resolution for the sector
+
 'Default FOV' : the angle of the sector if no `LOSSource` associated
+
 'Default Max Dist' : the radius of the sector if no `LOSSource` associated
+
 'Draw Simple Sector' : turn off target and obstacle detection, only draw sectors
+
 'Draw Hidden' : draw the area blocked by obstacles
+
 'Draw Sight' : draw the bright area that is not blocked by any obstacles
+
 'Fill UV' : generate a mesh with uv
+
 'Auto Regenerate' : regenerate mesh every frame
 
 3. Shader and texture tools for sector-shaped mesh
