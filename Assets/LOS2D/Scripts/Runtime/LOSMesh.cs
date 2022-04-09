@@ -38,6 +38,7 @@ namespace AillieoUtils.LOS2D
                 if (meshComp == null)
                 {
                     meshComp = gameObject.AddComponent<MeshFilter>();
+                    meshComp.mesh.MarkDynamic();
                 }
             }
 
