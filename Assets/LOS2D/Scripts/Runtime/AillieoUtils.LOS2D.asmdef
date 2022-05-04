@@ -1,6 +1,10 @@
 {
     "name": "AillieoUtils.LOS2D",
-    "references": [],
+    "references": [
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Mathematics"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
